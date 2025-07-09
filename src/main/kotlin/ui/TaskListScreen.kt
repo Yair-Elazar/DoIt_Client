@@ -15,19 +15,23 @@ import java.time.LocalDate
 object TaskListScreen {
     private val taskList: ObservableList<ApiService.Task> = FXCollections.observableArrayList()
     private lateinit var token: String
-    private var selectedTaskForEdit: ApiService.Task? = null  // משתנה לאחסון המשימה הנערכת
+    private var selectedTaskForEdit: ApiService.Task? = null
 
     fun createScene(authToken: String): Scene {
         token = authToken
 
-        val titleField = TextField().apply { promptText = "כותרת המשימה" }
-        val descriptionField = TextField().apply { promptText = "תיאור המשימה" }
-        val datePicker = DatePicker().apply { promptText = "תאריך יעד" }
+        val titleField = TextField().apply { promptText = "Task Title" }
+        val descriptionField = TextField().apply { promptText = "Task Description" }
+        val datePicker = DatePicker().apply { promptText = "Due Date" }
         val categoryBox = ComboBox<String>().apply {
-            items.addAll("כללי", "עבודה", "לימודים", "אישי")
-            value = "כללי"
+            items.addAll("General", "Work", "Study", "Personal")
+            value = "General"
         }
-        val addButton = Button("➕ הוסף משימה")
+        val addButton = Button("➕ Add Task")
+
+        val userComboBox = ComboBox<String>().apply {
+            items.addAll("User 1", "User 2", "User 3")
+        }
 
         val taskListView = ListView(taskList)
         taskListView.setCellFactory {
@@ -51,20 +55,18 @@ object TaskListScreen {
                     checkBox.setOnAction {
                         val task = item
                         if (task != null) {
-                            // כאן תקרא לפונקציה לעדכון השרת
-                            println("עדכון סטטוס ל-${checkBox.isSelected} עבור ${task.title}")
-                            // לדוגמה: ApiService.updateTaskCompletion(token, task.copy(completed = checkBox.isSelected))
+                            println("Updating status to ${checkBox.isSelected} for ${task.title}")
+                            // Example: ApiService.updateTaskCompletion(token, task.copy(completed = checkBox.isSelected))
                         }
                     }
 
                     deleteButton.setOnAction {
                         val task = item
                         if (task != null) {
-                            // קריאה לפונקציה למחיקת משימה
                             CoroutineScope(Dispatchers.IO).launch {
-                                ApiService.deleteTask(token, task.id)  // מחיקת המשימה מהשרת
+                                ApiService.deleteTask(token, task.id)
                                 withContext(Dispatchers.Main) {
-                                    taskList.remove(task)  // מחיקת המשימה מהרשימה המקומית
+                                    taskList.remove(task)
                                 }
                             }
                         }
@@ -78,7 +80,7 @@ object TaskListScreen {
                             descriptionField.text = task.description
                             datePicker.value = LocalDate.parse(task.dueDate)
                             categoryBox.value = task.category
-                            addButton.text = "שמור שינויים"  // שינוי הטקסט של הכפתור להודעות עדכון
+                            addButton.text = "💾 Save Changes"
                         }
                     }
                 }
@@ -88,7 +90,7 @@ object TaskListScreen {
                     if (empty || task == null) {
                         graphic = null
                     } else {
-                        label.text = "${task.title} "
+                        label.text = task.title
                         checkBox.isSelected = task.completed
                         graphic = content
                     }
@@ -101,10 +103,10 @@ object TaskListScreen {
             val description = descriptionField.text
             val date = datePicker.value
             val category = categoryBox.value
+            val selectedUsers = listOf(userComboBox.value)
 
             if (!title.isNullOrBlank() && date != null) {
                 if (selectedTaskForEdit == null) {
-                    // הוספת משימה חדשה
                     val request = ApiService.CreateTaskRequest(title, description, date.toString(), category, false)
                     CoroutineScope(Dispatchers.IO).launch {
                         ApiService.addTask(token, request)
@@ -113,16 +115,16 @@ object TaskListScreen {
                             titleField.clear()
                             descriptionField.clear()
                             datePicker.value = null
-                            categoryBox.value = "כללי"
+                            categoryBox.value = "General"
                         }
                     }
                 } else {
-                    // עדכון משימה קיימת
                     val updatedTask = selectedTaskForEdit!!.copy(
                         title = title,
                         description = description,
                         dueDate = date.toString(),
-                        category = category
+                        category = category,
+                        users = selectedUsers
                     )
                     CoroutineScope(Dispatchers.IO).launch {
                         ApiService.updateTask(token, updatedTask)
@@ -132,15 +134,15 @@ object TaskListScreen {
                             titleField.clear()
                             descriptionField.clear()
                             datePicker.value = null
-                            categoryBox.value = "כללי"
-                            addButton.text = "➕ הוסף משימה"  // שינוי הטקסט בחזרה
+                            categoryBox.value = "General"
+                            addButton.text = "➕ Add Task"
                         }
                     }
                 }
             }
         }
 
-        val inputLayout = VBox(10.0, titleField, descriptionField, datePicker, categoryBox, addButton).apply {
+        val inputLayout = VBox(10.0, titleField, descriptionField, datePicker, categoryBox, userComboBox, addButton).apply {
             padding = Insets(10.0)
         }
 
@@ -162,7 +164,7 @@ object TaskListScreen {
                     taskList.setAll(tasks)
                 }
             } catch (e: Exception) {
-                println("שגיאה בטעינת משימות: ${e.message}")
+                println("Error loading tasks: ${e.message}")
             }
         }
     }

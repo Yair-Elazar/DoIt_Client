@@ -11,18 +11,18 @@ import kotlinx.coroutines.*
 
 class LoginScreen : Application() {
     override fun start(primaryStage: Stage) {
-        val usernameField = TextField().apply { promptText = "שם משתמש" }
-        val passwordField = PasswordField().apply { promptText = "סיסמא" }
-        val actionButton = Button("התחבר")
-        val switchModeLink = Hyperlink("אין לך משתמש? הירשם כאן")
+        val usernameField = TextField().apply { promptText = "Username" }
+        val passwordField = PasswordField().apply { promptText = "Password" }
+        val actionButton = Button("Login")
+        val switchModeLink = Hyperlink("Don't have an account? Register here")
         val statusLabel = Label()
 
         var isLoginMode = true
 
         fun switchMode() {
             isLoginMode = !isLoginMode
-            actionButton.text = if (isLoginMode) "התחבר" else "הרשמה"
-            switchModeLink.text = if (isLoginMode) "אין לך משתמש? הירשם כאן" else "כבר יש לך משתמש? התחבר"
+            actionButton.text = if (isLoginMode) "Login" else "Register"
+            switchModeLink.text = if (isLoginMode) "Don't have an account? Register here" else "Already have an account? Login"
             statusLabel.text = ""
             usernameField.clear()
             passwordField.clear()
@@ -32,23 +32,23 @@ class LoginScreen : Application() {
             val username = usernameField.text.trim()
             val password = passwordField.text.trim()
 
-            // ולידציה בסיסית
+            // Basic validation
             when {
                 username.isBlank() || password.isBlank() -> {
-                    statusLabel.text = "יש למלא שם משתמש וסיסמה"
+                    statusLabel.text = "Please enter a username and password"
                     return@setOnAction
                 }
                 username.length < 3 -> {
-                    statusLabel.text = "שם המשתמש צריך להכיל לפחות 3 תווים"
+                    statusLabel.text = "Username must be at least 3 characters"
                     return@setOnAction
                 }
                 password.length < 4 -> {
-                    statusLabel.text = "הסיסמה צריכה להכיל לפחות 4 תווים"
+                    statusLabel.text = "Password must be at least 4 characters"
                     return@setOnAction
                 }
             }
 
-            // המשך התחברות או הרשמה...
+            // Proceed with login or registration
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     val response = if (isLoginMode) {
@@ -59,16 +59,16 @@ class LoginScreen : Application() {
 
                     withContext(Dispatchers.Main) {
                         val taskListScene = TaskListScreen.createScene(response.token)
+                        primaryStage.title = "doit" // Update title after login
                         primaryStage.scene = taskListScene
                     }
                 } catch (e: Exception) {
                     withContext(Dispatchers.Main) {
-                        statusLabel.text = "שגיאה: ${e.message}"
+                        statusLabel.text = "Error: ${e.message}"
                     }
                 }
             }
         }
-
 
         switchModeLink.setOnAction { switchMode() }
 
@@ -78,12 +78,11 @@ class LoginScreen : Application() {
         }
 
         val scene = Scene(vbox)
-        primaryStage.title = "התחברות"
+        primaryStage.title = "Login"
         primaryStage.scene = scene
         primaryStage.show()
     }
 }
-
 
 fun main() {
     Application.launch(LoginScreen::class.java)

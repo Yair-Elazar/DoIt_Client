@@ -23,8 +23,8 @@ object ApiService {
         }
 
         engine {
-            requestTimeout = 30_000 // 10 שניות
-            pipelining = true // אפשר שימוש ב־pipelining עם chunked responses
+            requestTimeout = 30_000
+            pipelining = true
         }
     }
 
@@ -48,7 +48,8 @@ object ApiService {
         val description: String? = null,
         val dueDate: String? = null,
         val category: String? = null,
-        val completed: Boolean
+        val completed: Boolean,
+        val users: List<String> = listOf()  // הוספתי את רשימת המשתמשים
     )
 
     suspend fun getTasks(token: String): List<Task> {
@@ -78,7 +79,8 @@ object ApiService {
         val description: String? = null,
         val dueDate: String? = null,
         val category: String? = null,
-        val completed: Boolean = false
+        val completed: Boolean = false,
+        val users: List<String> = listOf()  // הוספתי את רשימת המשתמשים כאן גם
     )
 
     suspend fun addTask(token: String, task: CreateTaskRequest) {
@@ -96,7 +98,23 @@ object ApiService {
         }
     }
 
-    // פונקציה לעדכון משימה קיימת
+    // חדש - הוספת מספר משימות במכה
+    suspend fun addTasksBatch(token: String, tasks: List<CreateTaskRequest>) {
+        val response = client.post("http://localhost:8080/api/tasks/batch") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(tasks)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw RuntimeException("שמירת המשימות נכשלה (batch): ${response.status}, תגובה: $errorBody")
+        }
+    }
+
+    // עדכון משימה קיימת
     suspend fun updateTask(token: String, task: Task) {
         val response = client.put("http://localhost:8080/api/tasks/${task.id}") {
             contentType(ContentType.Application.Json)
@@ -111,6 +129,23 @@ object ApiService {
             throw RuntimeException("עדכון המשימה נכשלה: ${response.status}, תגובה: $errorBody")
         }
     }
+
+    // חדש - עדכון מספר משימות במכה
+    suspend fun updateTasksBatch(token: String, tasks: List<Task>) {
+        val response = client.put("http://localhost:8080/api/tasks/batch") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            setBody(tasks)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw RuntimeException("עדכון המשימות נכשל (batch): ${response.status}, תגובה: $errorBody")
+        }
+    }
+
     suspend fun deleteTask(token: String, taskId: Long) {
         val response = client.delete("http://localhost:8080/api/tasks/$taskId") {
             headers {
@@ -123,6 +158,7 @@ object ApiService {
             throw RuntimeException("מחיקת המשימה נכשלה: ${response.status}, תגובה: $errorBody")
         }
     }
+
     @Serializable
     data class RegisterRequest(val username: String, val password: String)
 
@@ -132,7 +168,6 @@ object ApiService {
             setBody(RegisterRequest(username, password))
         }
 
-        // בדיקה אם ההרשמה הצליחה
         if (!response.status.isSuccess()) {
             throw RuntimeException("הרשמה נכשלה: ${response.status}")
         }
@@ -140,4 +175,18 @@ object ApiService {
         return response.body()
     }
 
+    suspend fun addUserToTask(token: String, taskId: Long, usernameToAdd: String) {
+        val response = client.post("http://localhost:8080/api/tasks/$taskId/addUser") {
+            contentType(ContentType.Application.Json)
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+            }
+            parameter("usernameToAdd", usernameToAdd)
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw RuntimeException("הוספת משתמש למשימה נכשלה: ${response.status}, תגובה: $errorBody")
+        }
+    }
 }
