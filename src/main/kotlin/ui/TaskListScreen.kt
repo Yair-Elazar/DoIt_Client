@@ -16,6 +16,8 @@ object TaskListScreen {
     private val taskList: ObservableList<ApiService.Task> = FXCollections.observableArrayList()
     private lateinit var token: String
     private var selectedTaskForEdit: ApiService.Task? = null
+    private lateinit var userComboBox: ComboBox<String>
+
 
     fun createScene(authToken: String): Scene {
         token = authToken
@@ -29,9 +31,12 @@ object TaskListScreen {
         }
         val addButton = Button("➕ Add Task")
 
-        val userComboBox = ComboBox<String>().apply {
-            items.addAll("User 1", "User 2", "User 3")
+        userComboBox = ComboBox<String>().apply {
+            promptText = "Select user to share"
         }
+        loadUsers()
+
+
 
         val taskListView = ListView(taskList)
         taskListView.setCellFactory {
@@ -168,4 +173,17 @@ object TaskListScreen {
             }
         }
     }
+    private fun loadUsers() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val users = ApiService.getAllUsernames(token) // צריך להוסיף את הפונקציה הזו ב-ApiService כפי שכתבנו קודם
+                withContext(Dispatchers.Main) {
+                    userComboBox.items.setAll(users)
+                }
+            } catch (e: Exception) {
+                println("Error loading users: ${e.message}")
+            }
+        }
+    }
+
 }

@@ -175,18 +175,41 @@ object ApiService {
         return response.body()
     }
 
-    suspend fun addUserToTask(token: String, taskId: Long, usernameToAdd: String) {
-        val response = client.post("http://localhost:8080/api/tasks/$taskId/addUser") {
+    @Serializable
+    data class ShareTaskRequest(
+        val taskId: Long,
+        val usernames: List<String>
+    )
+
+    suspend fun shareTask(token: String, taskId: Long, usernames: List<String>) {
+        val response = client.post("http://localhost:8080/api/tasks/share") {
             contentType(ContentType.Application.Json)
             headers {
                 append(HttpHeaders.Authorization, "Bearer $token")
             }
-            parameter("usernameToAdd", usernameToAdd)
+            setBody(ShareTaskRequest(taskId, usernames))
         }
 
         if (!response.status.isSuccess()) {
             val errorBody = response.bodyAsText()
-            throw RuntimeException("הוספת משתמש למשימה נכשלה: ${response.status}, תגובה: $errorBody")
+            throw RuntimeException("שיתוף משימה נכשל: ${response.status}, תגובה: $errorBody")
         }
     }
+    suspend fun getAllUsernames(token: String): List<String> {
+        val response = client.get("http://localhost:8080/api/users/usernames") {
+            headers {
+                append(HttpHeaders.Authorization, "Bearer $token")
+                accept(ContentType.Application.Json)
+            }
+        }
+
+        if (!response.status.isSuccess()) {
+            val errorBody = response.bodyAsText()
+            throw RuntimeException("Failed to load usernames: ${response.status}, body: $errorBody")
+        }
+
+        return response.body()
+    }
+
+
 }

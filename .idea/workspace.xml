@@ -7,7 +7,6 @@
     <list default="true" id="048233e8-8ccf-4206-9a78-d8eb2bc3cfbc" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/network/ApiService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/network/ApiService.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/kotlin/ui/LoginScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/ui/LoginScreen.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/ui/TaskListScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/ui/TaskListScreen.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
